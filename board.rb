@@ -1,34 +1,11 @@
 class Board 
- def initialize
+  attr_accessor :field_id, :user_id :user_name, :slug, :description, :category
 
- end
+  def initialize
 
- def to_json
+  end
+  
+  def to_json
 
- end
-
- def field_id
-
- end
-
- def user_id
-
- end
-
- def user_name
-
- end
-
- def slug
-
- end
-
- def description
-
- end
-
- def category
-
- end
-
+  end
 end 
