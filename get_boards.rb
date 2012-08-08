@@ -1,12 +1,11 @@
-#require 'active_record'
-#require 'rubygems'
 require 'yaml'
-#require 'schema'
 require 'nokogiri'
 require 'open-uri'
 require 'debugger'
 require 'zlib'
+require 'json'
 require_relative 'board'
+require_relative 'pin'
 #$LOAD_PATH << '.'
 
 class BoardsCrawler 
@@ -14,6 +13,8 @@ class BoardsCrawler
   def initialize(seed = nil)
     @header_hash = { "User-Agent" => 
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.57 Safari/536.11"}
+    @boards = []
+    @pins = []
 
     if !seed.nil?
       @current_user_slug = seed
@@ -22,17 +23,21 @@ class BoardsCrawler
 
   # The seed is a users user name
   def crawl_from_seed
-    puts "begining to crawl!"
     users_page = Nokogiri::HTML(open(users_url, @header_hash))
     users_boards = users_page.css("#wrapper.BoardLayout li")
     users_boards.each do |board_thumb_html|
-      board = get_board_info(board_thumb_html)
+      get_board_and_pins(board_thumb_html)
       sleep rand (1.0..3.0)
     end
   end
 
   def crawl_from_main_page
      @current_user_slug = "?"
+  end
+
+  def get_board_and_pins(board_thumb_html)
+    @boards << get_board_info(board_thumb_html)
+    get_pins_info(@users_pin_board, @boards.last.field_id)
   end
 
   def get_board_info(board_thumb_html)
@@ -43,11 +48,28 @@ class BoardsCrawler
     board.user_id     = Zlib.crc32 @current_user_slug
     board.field_id    = board_thumb_html["id"].gsub("board","")
     board.slug        = board_thumb_html.css("h3 a").first["href"].gsub( @current_user_slug, "").gsub("\/","")
-    board.category    = board_thumb_html.css("h3 a").first.text
-    users_pin_board   = Nokogiri::HTML(open(users_url+board.slug, @header_hash ))
-    board.description = users_pin_board.css("#BoardDescription").text()
-  
+    board.name        = board_thumb_html.css("h3 a").first.text
+    sleep rand(1.0..2.0)
+    @users_pin_board  = Nokogiri::HTML(open(users_url+board.slug, @header_hash ))
+    board.description = @users_pin_board.css("#BoardDescription").text
+    board.category    = @users_pin_board.css('meta[property="pinterestapp:category"]').attr("content").value
+    
     board
+  end
+
+  def get_pins_info(pin_board_html, board_id)
+    debugger
+    pin = Pin.new
+
+    pin.user_id   = Zlib.crc32 @current_user_slug
+    pin.board_id  = board_id
+    pin_board_html.css(".pin").each do |pin_html|
+      pin.field_id = pin_html.attr("data-id") 
+      pin.description = pin_html.css(".description").text() 
+      pin.source = pin_html.css(".convo.attribution .NoImage a").attr("href").value 
+      pin.link = pin_html.css(".PinImage.ImgLink").attr("href").value 
+      pin.img_url = pin_html.css(".PinImage.ImgLink img").attr("src").value 
+    end
   end
 
   def users_url 
