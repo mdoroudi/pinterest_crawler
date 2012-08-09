@@ -32,6 +32,7 @@ class BoardsCrawler
       get_board_and_pins(board_thumb_html)
       sleep rand (1.0..3.0)
     end
+    save_to_files
   end
 
   def crawl_from_main_page
@@ -57,7 +58,6 @@ class BoardsCrawler
     board.description = @users_pin_board.css("#BoardDescription").text
     board.category    = @users_pin_board.css('meta[property="pinterestapp:category"]').attr("content").value
 
-    @boards_file.puts board.to_json 
     board
   end
 
@@ -77,7 +77,6 @@ class BoardsCrawler
         pin.link = pin_html.css(".PinImage.ImgLink").attr("href").value 
         pin.img_url = pin_html.css(".PinImage.ImgLink img").attr("src").value 
 
-        @pins_file.puts pin.to_json
         @pins << pin
       end
     rescue Exception => e
@@ -93,6 +92,19 @@ class BoardsCrawler
   def url(username)
     "http://pinterest.com/#{username}/"
   end
+
+  def save_to_files
+    @boards.collect! do |board|
+      board.to_json 
+    end
+
+    @pins.collect! do |pin|
+      pin.to_json
+    end
+
+    @boards_file.puts @boards
+    @pins_file.puts @pins
+  end 
 
 end
 
