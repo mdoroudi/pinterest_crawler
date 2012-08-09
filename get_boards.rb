@@ -16,6 +16,9 @@ class BoardsCrawler
     @boards = []
     @pins = []
 
+    @boards_file = File.new("boards.json", "w+")
+    @pins_file = File.new("pins.json", "w+")
+
     if !seed.nil?
       @current_user_slug = seed
     end
@@ -37,7 +40,7 @@ class BoardsCrawler
 
   def get_board_and_pins(board_thumb_html)
     @boards << get_board_info(board_thumb_html)
-    get_pins_info(@users_pin_board, @boards.last.field_id)
+    get_pins_info(@users_pin_board, @boards.last.field_id, @boards.last.slug)
   end
 
   def get_board_info(board_thumb_html)
@@ -53,22 +56,33 @@ class BoardsCrawler
     @users_pin_board  = Nokogiri::HTML(open(users_url+board.slug, @header_hash ))
     board.description = @users_pin_board.css("#BoardDescription").text
     board.category    = @users_pin_board.css('meta[property="pinterestapp:category"]').attr("content").value
-    
+
+    @boards_file.puts board.to_json 
     board
   end
 
-  def get_pins_info(pin_board_html, board_id)
-    debugger
+  def get_pins_info(pin_board_html, board_id, slug)
     pin = Pin.new
 
-    pin.user_id   = Zlib.crc32 @current_user_slug
-    pin.board_id  = board_id
-    pin_board_html.css(".pin").each do |pin_html|
-      pin.field_id = pin_html.attr("data-id") 
-      pin.description = pin_html.css(".description").text() 
-      pin.source = pin_html.css(".convo.attribution .NoImage a").attr("href").value 
-      pin.link = pin_html.css(".PinImage.ImgLink").attr("href").value 
-      pin.img_url = pin_html.css(".PinImage.ImgLink img").attr("src").value 
+    begin
+      pin.user_id   = Zlib.crc32 @current_user_slug
+      pin.board_id  = board_id
+      pin_board_html.css(".pin").each_with_index do |pin_html, index|
+        puts "Crawling #{index}th pin of board #{slug}"
+        source_of = pin_html.css(".convo.attribution .NoImage a")
+
+        pin.field_id = pin_html.attr("data-id") 
+        pin.description = pin_html.css(".description").text 
+        pin.source = source_of.empty? ? "User Uplaod" : source_of.attr("href").value
+        pin.link = pin_html.css(".PinImage.ImgLink").attr("href").value 
+        pin.img_url = pin_html.css(".PinImage.ImgLink img").attr("src").value 
+
+        @pins_file.puts pin.to_json
+        @pins << pin
+      end
+    rescue Exception => e
+      puts e
+      puts "pin_html has a problem"
     end
   end
 
@@ -83,7 +97,7 @@ class BoardsCrawler
 end
 
 # run with
-# ruby get_boards.rb mdoroudi
+# ruby get_boards.rb user-name 
 
 if ARGV.size == 0
   puts "crawling and finding users from the homepage"

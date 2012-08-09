@@ -18,7 +18,7 @@ class Pin
     }
   end
 
+  #TODO
   def self.json_create(o)
-    obj = new()
   end
 end 

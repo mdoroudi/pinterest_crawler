@@ -1,9 +1,7 @@
 class Board 
   attr_accessor :field_id, :user_id, :user_name, :slug, :description, :category, :name
 
-  def initialize(hash)
-    hash.each do |key_value|
-    end
+  def initialize()
   end
   
   def to_json
@@ -18,7 +16,7 @@ class Board
     }
   end
 
+  #TODO
   def self.json_create(o)
-    obj = new()
   end
 end 
