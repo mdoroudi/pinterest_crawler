@@ -37,6 +37,13 @@ class BoardsCrawler
 
   def crawl_from_main_page
      @current_user_slug = "?"
+     home_page = Nokogiri::HTML(open("http://pinterest.com/", @header_hash))
+     boards = home_page.css("#wrapper #ColumnContainer .pin")
+     boards.each do |board_thumb_html|
+       get_pins_info(board_thumb_html)
+       sleep rand (1.0..3.0)
+     end
+     save_to_files
   end
 
   def get_board_and_pins(board_thumb_html)
@@ -61,14 +68,14 @@ class BoardsCrawler
     board
   end
 
-  def get_pins_info(pin_board_html, board_id, slug)
+  def get_pins_info(pin_board_html, board_id = nil, slug = nil)
     pin = Pin.new
 
     begin
       pin.user_id   = Zlib.crc32 @current_user_slug
-      pin.board_id  = board_id
+      pin.board_id  = board_id if board_id
       pin_board_html.css(".pin").each_with_index do |pin_html, index|
-        puts "Crawling #{index}th pin of board #{slug}"
+        puts "Crawling #{index}th pin of board #{slug}" if slug
         source_of = pin_html.css(".convo.attribution .NoImage a")
 
         pin.field_id = pin_html.attr("data-id") 
