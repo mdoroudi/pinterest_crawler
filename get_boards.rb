@@ -38,7 +38,7 @@ class BoardsCrawler
   def crawl_from_main_page
      @current_user_slug = "?"
      home_page = Nokogiri::HTML(open("http://pinterest.com/", @header_hash))
-     boards = home_page.css("#wrapper #ColumnContainer .pin")
+     boards = home_page.css("#wrapper #ColumnContainer")
      boards.each do |board_thumb_html|
        get_pins_info(board_thumb_html)
        sleep rand (1.0..3.0)
