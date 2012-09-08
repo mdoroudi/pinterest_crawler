@@ -1,4 +1,5 @@
 class Pin 
+
   attr_accessor :field_id, :user_id, :board_id, :img_url, :is_repin, :is_video, :source, :link, :description
 
   def initialize
