@@ -67,24 +67,22 @@ class BoardsCrawler
   end 
 
   def get_pins_info(pins_html, board_id = nil, slug = nil)
-    pin = Pin.new
 
     begin
-      unless @current_user_slug.nil?
-        pin.user_id   = Zlib.crc32 @current_user_slug
-        pin.board_id  = board_id if board_id
-      end 
-
       pins_html.each_with_index do |pin_html, index|
-        puts "Crawling #{index}th pin of board #{slug}" if slug
-        source_of = pin_html.css(".convo.attribution .NoImage a")
+        pin = Pin.new
 
-        debugger
         if @current_user_slug.nil?
           pin.user_id = pin_html.css(".attribution .ImgLink").attr("href").value
           # have to write something that craws the board and then get th board_id too
           pin.board_id = 0 
+        else
+          pin.user_id   = Zlib.crc32 @current_user_slug
+          pin.board_id  = board_id if board_id
         end 
+
+        puts "Crawling #{index}th pin of board #{slug}" if slug
+        source_of = pin_html.css(".convo.attribution .NoImage a")
 
         pin.field_id = pin_html.attr("data-id") 
         pin.description = pin_html.css(".description").text 
