@@ -73,14 +73,14 @@ class BoardsCrawler
     begin
       pins_html.each_with_index do |pin_html, index|
         pin = Pin.new
-
-        @current_user_slug = pin_html.css(".convo a").attr("href").value.split("/")[1] unless @current_user_slug
+        @current_user_slug = pin_html.css(".convo a").attr("href").value.split("/")[1] 
+        break if @current_user_slug.empty?
         
         if args[:crawl_pin_boards]
           sleep rand(1.0..2.0)
           crawl_from_seed
         else
-          puts "Crawling #{index}th pin of board #{args[:slug]}" if args[:slug]
+          puts "Crawling #{index}th pin of board #{@current_user_slug}/#{args[:slug]}" if args[:slug]
           source_of = pin_html.css(".convo.attribution .NoImage a")
 
           pin.user_name = @current_user_slug
