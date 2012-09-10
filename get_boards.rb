@@ -73,30 +73,19 @@ class BoardsCrawler
     begin
       pins_html.each_with_index do |pin_html, index|
         pin = Pin.new
-  
-        if @current_user_slug.nil?
-          debugger
-          pin.user_id = Zlib.crc32 pin_html.css(".convo a").attr("href").value.split("/")[1]
-          pin.board_id = 0 
-          pin.user_name = pin_html.css(".convo a").attr("href").value.split("/")[1]
-          if args[:crawl_pin_boards]
-            @current_user_slug = pin.user_name  
-            sleep rand(1.0..2.0)
-            crawl_from_seed
-            # get the user_id from crawling from seed 
-            debugger
-            pin.board_id = @pins.first[:board_id] 
-          end
-        else
-          pin.user_id   = Zlib.crc32 @current_user_slug
-          pin.board_id  = args[:board_id] if args[:board_id]
-          pin.user_name = @current_user_slug
-        end 
 
-        unless args[:crawl_pin_boards]
+        @current_user_slug = pin_html.css(".convo a").attr("href").value.split("/")[1] unless @current_user_slug
+        
+        if args[:crawl_pin_boards]
+          sleep rand(1.0..2.0)
+          crawl_from_seed
+        else
           puts "Crawling #{index}th pin of board #{args[:slug]}" if args[:slug]
           source_of = pin_html.css(".convo.attribution .NoImage a")
 
+          pin.user_name = @current_user_slug
+          pin.user_id = Zlib.crc32 @current_user_slug
+          pin.board_id = args[:board_id] if args[:board_id]
           pin.field_id = pin_html.attr("data-id") 
           pin.description = pin_html.css(".description").text 
           pin.source = source_of.empty? ? "User Uplaod" : source_of.attr("href").value
