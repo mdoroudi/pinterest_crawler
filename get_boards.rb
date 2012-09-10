@@ -39,14 +39,14 @@ class BoardsCrawler
      @current_user_slug = nil 
      home_page = Nokogiri::HTML(open("http://pinterest.com/", @header_hash))
      pins = home_page.css("#wrapper #ColumnContainer .pin")
-     get_pins_info(pins)
+     get_pins_info(pins, {crawl_pin_boards: true})
      save_to_files
   end
 
 
   def get_board_and_pins(board_thumb_html)
     @boards << get_board_info(board_thumb_html)
-    get_pins_info(@users_pin_board.css(".pin"), @boards.last.field_id, @boards.last.slug)
+    get_pins_info(@users_pin_board.css(".pin"), {board_id: @boards.last.field_id, slug: @boards.last.slug})
   end 
 
   def get_board_info(board_thumb_html)
@@ -66,31 +66,46 @@ class BoardsCrawler
     board
   end 
 
-  def get_pins_info(pins_html, board_id = nil, slug = nil)
+  def get_pins_info(pins_html, args = {})
+    default_args = {board_id: nil, slug: nil, crawl_pin_boards: false}
+    args = default_args.merge(args)
 
     begin
       pins_html.each_with_index do |pin_html, index|
         pin = Pin.new
-
+  
         if @current_user_slug.nil?
-          pin.user_id = pin_html.css(".attribution .ImgLink").attr("href").value
-          # have to write something that craws the board and then get th board_id too
+          debugger
+          pin.user_id = Zlib.crc32 pin_html.css(".convo a").attr("href").value.split("/")[1]
           pin.board_id = 0 
+          pin.user_name = pin_html.css(".convo a").attr("href").value.split("/")[1]
+          if args[:crawl_pin_boards]
+            @current_user_slug = pin.user_name  
+            sleep rand(1.0..2.0)
+            crawl_from_seed
+            # get the user_id from crawling from seed 
+            debugger
+            pin.board_id = @pins.first[:board_id] 
+          end
         else
           pin.user_id   = Zlib.crc32 @current_user_slug
-          pin.board_id  = board_id if board_id
+          pin.board_id  = args[:board_id] if args[:board_id]
+          pin.user_name = @current_user_slug
         end 
 
-        puts "Crawling #{index}th pin of board #{slug}" if slug
-        source_of = pin_html.css(".convo.attribution .NoImage a")
+        unless args[:crawl_pin_boards]
+          puts "Crawling #{index}th pin of board #{args[:slug]}" if args[:slug]
+          source_of = pin_html.css(".convo.attribution .NoImage a")
 
-        pin.field_id = pin_html.attr("data-id") 
-        pin.description = pin_html.css(".description").text 
-        pin.source = source_of.empty? ? "User Uplaod" : source_of.attr("href").value
-        pin.link = pin_html.css(".PinImage.ImgLink").attr("href").value 
-        pin.img_url = pin_html.css(".PinImage.ImgLink img").attr("src").value 
+          pin.field_id = pin_html.attr("data-id") 
+          pin.description = pin_html.css(".description").text 
+          pin.source = source_of.empty? ? "User Uplaod" : source_of.attr("href").value
+          pin.link = pin_html.css(".PinImage.ImgLink").attr("href").value 
+          pin.img_url = pin_html.css(".PinImage.ImgLink img").attr("src").value 
+          @pins << pin
+        end
 
-        @pins << pin
+        @pins
       end
     rescue Exception => e
       puts e
@@ -107,16 +122,11 @@ class BoardsCrawler
   end
 
   def save_to_files
-    @boards.collect! do |board|
-      board.to_json 
-    end
+    @boards.collect! { |board| board.to_json } 
+    @pins.collect! { |pin| pin.to_json } 
 
-    @pins.collect! do |pin|
-      pin.to_json
-    end
-
-    @boards_file.puts @boards
-    @pins_file.puts @pins
+    @boards_file.puts @boards unless @boards.empty?
+    @pins_file.puts @pins unless @pins.empty?
   end 
 
 end
