@@ -25,10 +25,10 @@ class BoardsCrawler
   # The seed is a users user name
   def crawl_from_seed
     users_page = Nokogiri::HTML(open(users_url, @header_hash))
+    sleep rand(1.0..2.0)
     users_boards = users_page.css("#wrapper.BoardLayout li")
     users_boards.each do |board_thumb_html|
       get_board_and_pins(board_thumb_html)
-      sleep rand (1.0..3.0)
     end
     save_to_files
   end
@@ -78,7 +78,6 @@ class BoardsCrawler
     pins_html.each_with_index do |pin_html, index|
       begin
         if args[:crawling_from_main_page] == "boards"
-          sleep rand(1.0..2.0)
           @current_user_slug = pin_html.css(".convo a").attr("href").value.split("/")[1] 
           crawl_from_seed
         elsif args[:crawling_from_main_page] == "pins"
@@ -113,6 +112,8 @@ class BoardsCrawler
     file_mode = @@append_to_file ? 'a' : 'w'
     File.new("boards.json", file_mode).puts @boards unless @boards.empty?
     File.new("pins.json", file_mode).puts @pins unless @pins.empty?
+    @boards = []
+    @pins = []
   end 
 
   def get_pin_info_only_from_main(pin_html, index)
