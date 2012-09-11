@@ -4,6 +4,7 @@ require 'open-uri'
 require 'debugger'
 require 'zlib'
 require 'json'
+require 'colorize'
 require_relative 'board'
 require_relative 'pin'
 #$LOAD_PATH << '.'
@@ -16,10 +17,7 @@ class BoardsCrawler
     @boards = []
     @pins = []
 
-    @boards_file = File.new("boards.json", "w+")
-    @pins_file = File.new("pins.json", "w+")
-
-    if !seed.nil?
+    unless seed.nil?
       @current_user_slug = seed
     end
   end
@@ -35,11 +33,15 @@ class BoardsCrawler
     save_to_files
   end
 
-  def crawl_from_main_page
+  def crawl_from_main_page(deep = false)
      @current_user_slug = nil 
      home_page = Nokogiri::HTML(open("http://pinterest.com/", @header_hash))
      pins = home_page.css("#wrapper #ColumnContainer .pin")
-     get_pins_info(pins, {crawling_boards_from_main_page: true})
+     if deep
+       get_pins_info(pins, {crawling_from_main_page: 'boards'})
+     else
+       get_pins_info(pins, {crawling_from_main_page: 'pins'})
+     end
      save_to_files
   end
 
@@ -70,32 +72,28 @@ class BoardsCrawler
     default_args = {
       board_id: nil, 
       slug: nil, 
-      crawling_boards_from_main_page: false,
-      crawling_pins_from_main_page: false    
+      crawling_from_main_page: "none",
     }
     args = default_args.merge(args)
-
-    begin
-      pins_html.each_with_index do |pin_html, index|
-        #pin = Pin.new
-        get_pin_info(pin_html)
-        
-        if args[:crawling_boards_from_main_page]
+    pins_html.each_with_index do |pin_html, index|
+      begin
+        if args[:crawling_from_main_page] == "boards"
           sleep rand(1.0..2.0)
+          @current_user_slug = pin_html.css(".convo a").attr("href").value.split("/")[1] 
           crawl_from_seed
-        if args[:crawling_pins_from_main_page]
-          sleep rand(1.0..2.0)
-          get_pin_info_only_from_main(pin_html)
+        elsif args[:crawling_from_main_page] == "pins"
+          get_pin_info_only_from_main(pin_html, index)
         else
-          get_pin_info_from_board(pin_html)
+          get_pin_info_from_board(pin_html, index, args)
         end
-
-        @pins
+      rescue Exception => e
+        puts e
+        puts "There was a problem with the current pin:".red
+        puts "#{pin_html}"
+        next
       end
-    rescue Exception => e
-      puts e
-      puts "pin_html has a problem"
     end
+    @pins
   end
 
   def users_url 
@@ -112,32 +110,31 @@ class BoardsCrawler
     @boards.collect! { |board| board.to_json } 
     @pins.collect! { |pin| pin.to_json } 
 
-    @boards_file.puts @boards unless @boards.empty?
-    @pins_file.puts @pins unless @pins.empty?
+    File.new("boards.json", "w+").puts @boards unless @boards.empty?
+    File.new("pins.json", "w+").puts @pins unless @pins.empty?
   end 
 
-  def get_pin_info_only_from_main(pin_html)
+  def get_pin_info_only_from_main(pin_html, index)
     pin = Pin.new
     @current_user_slug = pin_html.css(".convo a").attr("href").value.split("/")[1] 
     puts "Crawling #{index}th pin of the main page. User: #{@current_user_slug}"
 
-    pin = get_common_pin_info(pin_html)
-    #pin.via = get the via instead of source
+    pin = get_common_pin_info(pin_html, pin)
     @pins << pin
   end
 
-  def get_pin_info_from_board(pin_html)
+  def get_pin_info_from_board(pin_html, index, args)
     pin = Pin.new
     puts "Crawling #{index}th pin of board #{@current_user_slug}/#{args[:slug]}" if args[:slug]
 
     source_of = pin_html.css(".convo.attribution .NoImage a")
-    pin = get_common_pin_info(pin_html)
+    pin = get_common_pin_info(pin_html, pin)
     pin.board_id = args[:board_id] if args[:board_id]
     pin.source = source_of.empty? ? "User Uplaod" : source_of.attr("href").value
     @pins << pin
   end
 
-  def get_common_pin_info(pin_html)
+  def get_common_pin_info(pin_html, pin)
     pin.user_name = @current_user_slug
     pin.user_id = Zlib.crc32 @current_user_slug
     pin.field_id = pin_html.attr("data-id") 
@@ -153,11 +150,25 @@ end
 # ruby get_boards.rb user-name 
 
 if ARGV.size == 0
-  puts "crawling and finding users from the homepage"
+  puts "crawling and finding pin from the homepage"
   crawler = BoardsCrawler.new
   crawler.crawl_from_main_page
+elsif ARGV.size == 1
+  if ARGV[0] == "-d"
+    puts "crawling deep and finding pins and boards from the homepage"
+    crawler = BoardsCrawler.new
+    crawler.crawl_from_main_page(true)
+  else
+    puts "crawling the boards for #{ARGV[0]}"
+    crawler = BoardsCrawler.new(ARGV[0])
+    crawler.crawl_from_seed
+  end
 else
-  puts "crawling the boards for #{ARGV[0]}"
-  crawler = BoardsCrawler.new(ARGV[0])
-  crawler.crawl_from_seed
+  puts "Wrong arguments, try one of the followings:".red
+  puts "Crawl a specific user:".blue
+  puts "\truby get_boards.rb [username]"
+  puts "Crawl only the main page pins (50):".blue
+  puts "\truby get_boards.rb"
+  puts "Crawl (deep) all the users boards and pins from the main page:".blue
+  puts "\truby get_boards.rb -d"
 end
