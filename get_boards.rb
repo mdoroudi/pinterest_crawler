@@ -17,6 +17,10 @@ class BoardsCrawler
     @boards = []
     @pins = []
 
+    file_mode = @@append_to_file ? 'a' : 'w'
+    @boards_file = File.new("boards.json", file_mode)
+    @pins_file = File.new("pins.json", file_mode)
+
     unless seed.nil?
       @current_user_slug = seed
     end
@@ -109,9 +113,9 @@ class BoardsCrawler
     @boards.collect! { |board| board.to_json } 
     @pins.collect! { |pin| pin.to_json } 
 
-    file_mode = @@append_to_file ? 'a' : 'w'
-    File.new("boards.json", file_mode).puts @boards unless @boards.empty?
-    File.new("pins.json", file_mode).puts @pins unless @pins.empty?
+    @boards_file.puts @boards unless @boards.empty?
+    @pins_file.puts @pins unless @pins.empty?
+
     @boards = []
     @pins = []
   end 
