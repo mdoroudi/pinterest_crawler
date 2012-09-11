@@ -39,7 +39,7 @@ class BoardsCrawler
      @current_user_slug = nil 
      home_page = Nokogiri::HTML(open("http://pinterest.com/", @header_hash))
      pins = home_page.css("#wrapper #ColumnContainer .pin")
-     get_pins_info(pins, {crawl_pin_boards: true})
+     get_pins_info(pins, {crawling_boards_from_main_page: true})
      save_to_files
   end
 
@@ -67,31 +67,27 @@ class BoardsCrawler
   end 
 
   def get_pins_info(pins_html, args = {})
-    default_args = {board_id: nil, slug: nil, crawl_pin_boards: false}
+    default_args = {
+      board_id: nil, 
+      slug: nil, 
+      crawling_boards_from_main_page: false,
+      crawling_pins_from_main_page: false    
+    }
     args = default_args.merge(args)
 
     begin
       pins_html.each_with_index do |pin_html, index|
-        pin = Pin.new
-        @current_user_slug = pin_html.css(".convo a").attr("href").value.split("/")[1] 
-        break if @current_user_slug.empty?
+        #pin = Pin.new
+        get_pin_info(pin_html)
         
-        if args[:crawl_pin_boards]
+        if args[:crawling_boards_from_main_page]
           sleep rand(1.0..2.0)
           crawl_from_seed
+        if args[:crawling_pins_from_main_page]
+          sleep rand(1.0..2.0)
+          get_pin_info_only_from_main(pin_html)
         else
-          puts "Crawling #{index}th pin of board #{@current_user_slug}/#{args[:slug]}" if args[:slug]
-          source_of = pin_html.css(".convo.attribution .NoImage a")
-
-          pin.user_name = @current_user_slug
-          pin.user_id = Zlib.crc32 @current_user_slug
-          pin.board_id = args[:board_id] if args[:board_id]
-          pin.field_id = pin_html.attr("data-id") 
-          pin.description = pin_html.css(".description").text 
-          pin.source = source_of.empty? ? "User Uplaod" : source_of.attr("href").value
-          pin.link = pin_html.css(".PinImage.ImgLink").attr("href").value 
-          pin.img_url = pin_html.css(".PinImage.ImgLink img").attr("src").value 
-          @pins << pin
+          get_pin_info_from_board(pin_html)
         end
 
         @pins
@@ -110,6 +106,8 @@ class BoardsCrawler
     "http://pinterest.com/#{username}/"
   end
 
+  protected
+
   def save_to_files
     @boards.collect! { |board| board.to_json } 
     @pins.collect! { |pin| pin.to_json } 
@@ -117,6 +115,37 @@ class BoardsCrawler
     @boards_file.puts @boards unless @boards.empty?
     @pins_file.puts @pins unless @pins.empty?
   end 
+
+  def get_pin_info_only_from_main(pin_html)
+    pin = Pin.new
+    @current_user_slug = pin_html.css(".convo a").attr("href").value.split("/")[1] 
+    puts "Crawling #{index}th pin of the main page. User: #{@current_user_slug}"
+
+    pin = get_common_pin_info(pin_html)
+    #pin.via = get the via instead of source
+    @pins << pin
+  end
+
+  def get_pin_info_from_board(pin_html)
+    pin = Pin.new
+    puts "Crawling #{index}th pin of board #{@current_user_slug}/#{args[:slug]}" if args[:slug]
+
+    source_of = pin_html.css(".convo.attribution .NoImage a")
+    pin = get_common_pin_info(pin_html)
+    pin.board_id = args[:board_id] if args[:board_id]
+    pin.source = source_of.empty? ? "User Uplaod" : source_of.attr("href").value
+    @pins << pin
+  end
+
+  def get_common_pin_info(pin_html)
+    pin.user_name = @current_user_slug
+    pin.user_id = Zlib.crc32 @current_user_slug
+    pin.field_id = pin_html.attr("data-id") 
+    pin.description = pin_html.css(".description").text 
+    pin.link = pin_html.css(".PinImage.ImgLink").attr("href").value 
+    pin.img_url = pin_html.css(".PinImage.ImgLink img").attr("src").value 
+    pin
+  end
 
 end
 
