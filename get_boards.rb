@@ -110,8 +110,9 @@ class BoardsCrawler
     @boards.collect! { |board| board.to_json } 
     @pins.collect! { |pin| pin.to_json } 
 
-    File.new("boards.json", "w+").puts @boards unless @boards.empty?
-    File.new("pins.json", "w+").puts @pins unless @pins.empty?
+    file_mode = @@append_to_file ? 'a' : 'w'
+    File.new("boards.json", file_mode).puts @boards unless @boards.empty?
+    File.new("pins.json", file_mode).puts @pins unless @pins.empty?
   end 
 
   def get_pin_info_only_from_main(pin_html, index)
@@ -148,6 +149,12 @@ end
 
 # run with
 # ruby get_boards.rb user-name 
+if ARGV.include?('-a')
+  @@append_to_file = true
+  ARGV.delete('-a')
+else
+  @@append_to_file = false
+end
 
 if ARGV.size == 0
   puts "crawling and finding pin from the homepage"
@@ -171,4 +178,5 @@ else
   puts "\truby get_boards.rb"
   puts "Crawl (deep) all the users boards and pins from the main page:".blue
   puts "\truby get_boards.rb -d"
+  puts "Use -a at anytime to append the results to the end of the previews result".blue
 end
