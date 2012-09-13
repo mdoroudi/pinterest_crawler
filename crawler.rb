@@ -9,7 +9,7 @@ require_relative 'board'
 require_relative 'pin'
 #$LOAD_PATH << '.'
 
-class BoardsCrawler 
+class PinterestCrawler 
 
   def initialize(seed = nil)
     @header_hash = { "User-Agent" => 
@@ -99,6 +99,9 @@ class BoardsCrawler
     @pins
   end
 
+
+  protected
+
   def users_url 
      url(@current_user_slug)
   end
@@ -106,8 +109,6 @@ class BoardsCrawler
   def url(username)
     "http://pinterest.com/#{username}/"
   end
-
-  protected
 
   def save_to_files
     @boards.collect! { |board| board.to_json } 
@@ -163,16 +164,16 @@ end
 
 if ARGV.size == 0
   puts "crawling and finding pin from the homepage"
-  crawler = BoardsCrawler.new
+  crawler = PinterestCrawler.new
   crawler.crawl_from_main_page
 elsif ARGV.size == 1
   if ARGV[0] == "-d"
     puts "crawling deep and finding pins and boards from the homepage"
-    crawler = BoardsCrawler.new
+    crawler = PinterestCrawler.new
     crawler.crawl_from_main_page(true)
   else
     puts "crawling the boards for #{ARGV[0]}"
-    crawler = BoardsCrawler.new(ARGV[0])
+    crawler = PinterestCrawler.new(ARGV[0])
     crawler.crawl_from_seed
   end
 else
