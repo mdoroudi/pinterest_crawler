@@ -1,4 +1,4 @@
-pinterest_crawler
+Pinterest Crawler
 =================
 ### How to run
 
@@ -7,18 +7,18 @@ Add `-a` to any of the following command and it will append the results to the a
 Get all the boards and pins from user mdoroudi. Replace the username mdoroudi whith whatever username you want.
 this creates two result files: `pins.json` and `boards.json`
 ```sh
- $ ruby crawler.rb mdoroudi  
+$ ruby crawler.rb mdoroudi  
 ```
 
-Get first 50 boards of the main page
+Get first 50 pins of the main page
 this creates one result file: `pins.json`
 ```sh
-  $ ruby crawler.rb
+$ ruby crawler.rb
 ```
 
 From the first page get the user of all the first 50 pins and crawl their boards and pins
 this crates two result files: `pins.json` and `boards.json`
 
 ```sh
-  $ ruby crawler.rb -d
+$ ruby crawler.rb -d
 ```
