@@ -1,16 +1,24 @@
 pinterest_crawler
 =================
+### How to run
 
-crawling pinterest
-Use one of the following options to run this, passing -a to any of them would append the result to the previews time
+Add `-a` to any of the following command and it will append the results to the already existing `pins.json` or `boards.json`. If you don't add `-a` this would overwrite the previewsly created pins.json and bords.json
 
-Crawl the first page, this will only get the first 50 pins on the homepage
-ruby get_boards.rb
+Get all the boards and pins from user mdoroudi. Replace the username mdoroudi whith whatever username you want.
+this creates two result files: `pins.json` and `boards.json`
+```sh
+ $ ruby crawler.rb mdoroudi  
+```
 
-Crawl all the pins and boards of owner of the first 50 pins on the homepage, -d is for deep crawl
-ruby get_board.rb -d
+Get first 50 boards of the main page
+this creates one result file: `pins.json`
+```sh
+  $ ruby crawler.rb
+```
 
-Given a pinterest_username for example mdoroudi it crawls all the boards and pins of the user
-ruby get_boards.rb [pinterest_username]
+From the first page get the user of all the first 50 pins and crawl their boards and pins
+this crates two result files: `pins.json` and `boards.json`
 
-This will create two output files pins.json and boards.json
+```sh
+  $ ruby crawler.rb -d
+```
