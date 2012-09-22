@@ -7,19 +7,19 @@ require 'json'
 require 'colorize'
 require_relative 'board'
 require_relative 'pin'
+require_relative 'user'
 #$LOAD_PATH << '.'
 
 class PinterestCrawler 
 
   def initialize(seed = nil)
-    @header_hash = { "User-Agent" => 
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.57 Safari/536.11"}
     @boards = []
     @pins = []
 
     file_mode = @@append_to_file ? 'a' : 'w'
     @boards_file = File.new("boards.json", file_mode)
     @pins_file = File.new("pins.json", file_mode)
+    @users_file = File.new("users.json", file_mode)
 
     unless seed.nil?
       @current_user_slug = seed
@@ -28,7 +28,7 @@ class PinterestCrawler
 
   # The seed is a users user name
   def crawl_from_seed
-    users_page = Nokogiri::HTML(open(users_url, @header_hash))
+    users_page =  users_page(@current_user_slug)
     sleep rand(1.0..2.0)
     users_boards = users_page.css("#wrapper.BoardLayout li")
     users_boards.each do |board_thumb_html|
@@ -39,7 +39,7 @@ class PinterestCrawler
 
   def crawl_from_main_page(deep = false)
      @current_user_slug = nil 
-     home_page = Nokogiri::HTML(open("http://pinterest.com/", @header_hash))
+     home_page = get_page_html("http://pinterest.com/") 
      pins = home_page.css("#wrapper #ColumnContainer .pin")
      if deep
        get_pins_info(pins, {crawling_from_main_page: 'boards'})
@@ -65,7 +65,7 @@ class PinterestCrawler
     board.slug        = board_thumb_html.css("h3 a").first["href"].gsub( @current_user_slug, "").gsub("\/","")
     board.name        = board_thumb_html.css("h3 a").first.text
     sleep rand(1.0..2.0)
-    @users_pin_board  = Nokogiri::HTML(open(users_url+board.slug, @header_hash ))
+    @users_pin_board  = get_page_html(users_url+board.slug)
     board.description = @users_pin_board.css("#BoardDescription").text
     board.category    = @users_pin_board.css('meta[property="pinterestapp:category"]').attr("content").value
 
@@ -99,8 +99,38 @@ class PinterestCrawler
     @pins
   end
 
+  def crawl_users_from_seed(seed = @current_user_slug)
+    @users = []
+    seed_user = User.new(user_name: seed)
+    @users << seed_user
+    
+    following_html = users_following_page(@current_user_slug)
+    followers_html = users_followers_page(@current_user_slug)
+    
+    seed_user.user_id = Zlib.crc32 @current_user_slug
+    seed_user.about = followers_html.css(".content p").text 
+
+
+    following_html.css(".person").each do |person_html|
+      user_name = person_html.css(".PersonImage").attr("href").value 
+      seed_user.following << Zlib.crc32(user_name)
+    end
+
+    followers_html.css(".person").each do |person_html|
+      user_name = person_html.css(".PersonImage").attr("href").value 
+      seed_user.followers << Zlib.crc32(user_name)
+    end
+    debugger
+    puts "donezo"
+
+  end
 
   protected
+
+  def crawl_curr_user(user)
+    user.user_id = Zlib.crc32 user.user_name
+    
+  end
 
   def users_url 
      url(@current_user_slug)
@@ -151,6 +181,24 @@ class PinterestCrawler
     pin
   end
 
+  def users_page(slug)
+    get_page_html(url(slug))
+  end
+
+  def users_following_page(slug)
+    get_page_html("#{url(slug)}following")
+  end
+
+  def users_followers_page(slug)
+    get_page_html("#{url(slug)}followers")
+  end
+
+  def get_page_html(url)
+    header_hash = { "User-Agent" => 
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.57 Safari/536.11"}
+    Nokogiri::HTML(open(url, header_hash)) 
+  end
+
 end
 
 # run with
@@ -175,6 +223,12 @@ elsif ARGV.size == 1
     puts "crawling the boards for #{ARGV[0]}"
     crawler = PinterestCrawler.new(ARGV[0])
     crawler.crawl_from_seed
+  end
+elsif ARGV.size == 2
+  if ARGV[0] == "-u"
+    puts "crawling user #{ARGV[1]} and all its follwer and following"
+    crawler = PinterestCrawler.new(ARGV[1])
+    crawler.crawl_users_from_seed(ARGV[1])
   end
 else
   puts "Wrong arguments, try one of the followings:".red
