@@ -12,14 +12,21 @@ class UserCrawler < PinterestCrawler
     @crawled_users_ids = [] 
     @users_file  = File.new("users.json", file_mode)
     @total_users_crawled = 0
-    @crawling_limit = 65
+    @crawling_limit = 500
   end
 
   def crawl_users_from_seed(seed = @current_user_slug)
     while @users_slugs.size > 0 && @total_users_crawled < @crawling_limit
-      crawl_current_user(@users_slugs[0])
-      @users_slugs.delete_at(0)
-      save_to_file
+      begin
+        crawl_current_user(@users_slugs[0])
+        @users_slugs.delete_at(0)
+        save_to_file
+      rescue Exception => e
+        puts e
+        puts "There was a problem with the current user: #{@users_slugs[0]}".red
+        @users_slugs.delete_at(0)
+        next
+      end
     end
   end
 
