@@ -56,6 +56,7 @@ class PinterestCrawler
   end
 
   def get_page_html(url)
+    sleep rand(1.0..2.0)
     header_hash = { "User-Agent" => 
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.57 Safari/536.11"}
     Nokogiri::HTML(open(url, header_hash)) 

@@ -43,7 +43,7 @@ namespace :crawl do
     task :from_seed do
       params = { seed: ENV['seed'] }
       crawler = UserCrawler.new(params)
-      crawler.crawl_users_from_seed(ENV['seed'])
+      crawler.crawl_users_from_seed
     end
 
     desc "crawling users from homepage"

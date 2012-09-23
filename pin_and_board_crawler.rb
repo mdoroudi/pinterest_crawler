@@ -48,7 +48,6 @@ class PinAndBoardCrawler < PinterestCrawler
     board.field_id    = board_thumb_html["id"].gsub("board","")
     board.slug        = board_thumb_html.css("h3 a").first["href"].gsub( @current_user_slug, "").gsub("\/","")
     board.name        = board_thumb_html.css("h3 a").first.text
-    sleep rand(1.0..2.0)
     @users_pin_board  = get_page_html(users_url+board.slug)
     board.description = @users_pin_board.css("#BoardDescription").text
     board.category    = @users_pin_board.css('meta[property="pinterestapp:category"]').attr("content").value

@@ -25,5 +25,5 @@ $ rake crawl:pins_boards:from_homepage_deep
 
 Given a user slug get all it's fololowers and followings, and for each get their follower and followings, the limit right no is 500 users
 ```sh
-$ rake crawl:users:from_seed
+$ rake crawl:users:from_seed seed=mdoroudi
 ```
