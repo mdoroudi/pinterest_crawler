@@ -1,8 +1,8 @@
 Pinterest Crawler
 =================
 ### How to run
-
-Add `-a` to any of the following command and it will append the results to the already existing `pins.json` or `boards.json`. If you don't add `-a` this would overwrite the previewsly created pins.json and bords.json
+These rake tasks always append the result to the end of the files if they already exist or create new ones if not.
+if you don't want to append just empty the result files (boards.json, pins.json or users.json) 
 
 Get all the boards and pins from user mdoroudi. Replace the username mdoroudi whith whatever username you want.
 this creates two result files: `pins.json` and `boards.json`
