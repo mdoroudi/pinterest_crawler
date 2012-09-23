@@ -7,18 +7,23 @@ Add `-a` to any of the following command and it will append the results to the a
 Get all the boards and pins from user mdoroudi. Replace the username mdoroudi whith whatever username you want.
 this creates two result files: `pins.json` and `boards.json`
 ```sh
-$ ruby crawler.rb mdoroudi  
+$ rake crawl:pins_boards:from_seed seed=mdoroudi
 ```
 
 Get first 50 pins of the main page
 this creates one result file: `pins.json`
 ```sh
-$ ruby crawler.rb
+$ rake crawl:pins_boards:pins_from_homepage 
 ```
 
 From the first page get the user of all the first 50 pins and crawl their boards and pins
 this crates two result files: `pins.json` and `boards.json`
 
 ```sh
-$ ruby crawler.rb -d
+$ rake crawl:pins_boards:from_homepage_deep
+```
+
+Given a user slug get all it's fololowers and followings, and for each get their follower and followings, the limit right no is 500 users
+```sh
+$ rake crawl:users:from_seed
 ```
