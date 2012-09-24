@@ -4,7 +4,9 @@ require 'debugger'
 class UserCrawler < PinterestCrawler
 
   def initialize(params = {seed: nil, append_to_file: true})
-    params[:append_to_file] = true if params[:append_to_file].nil?
+    #params[:append_to_file] = true if params[:append_to_file].nil?
+    # always overwrite for now
+    params[:append_to_file] = false
 
     super params
     @users       = []
@@ -12,7 +14,7 @@ class UserCrawler < PinterestCrawler
     @crawled_users_ids = [] 
     @users_file  = File.new("users.json", file_mode)
     @total_users_crawled = 0
-    @crawling_limit = 500
+    @crawling_limit = 5
   end
 
   def crawl_users_from_seed(seed = @current_user_slug)
@@ -20,7 +22,6 @@ class UserCrawler < PinterestCrawler
       begin
         crawl_current_user(@users_slugs[0])
         @users_slugs.delete_at(0)
-        save_to_file
       rescue Exception => e
         puts e
         puts "There was a problem with the current user: #{@users_slugs[0]}".red
@@ -28,6 +29,7 @@ class UserCrawler < PinterestCrawler
         next
       end
     end
+    save_to_file
   end
 
   def crawl_current_user(seed = @current_user_slug)
@@ -67,9 +69,9 @@ class UserCrawler < PinterestCrawler
   end
 
   def save_to_file
-    @users.collect! {|user| user.to_json}
-    @users_file.puts @users unless @users.empty?
-    @users = []
+    users = @users.collect {|user| user.to_json}
+    users_json = JSON.generate(users)
+    @users_file.puts users_json 
   end
 
   def users_following_page(slug)
