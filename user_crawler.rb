@@ -14,7 +14,7 @@ class UserCrawler < PinterestCrawler
     @crawled_users_ids = [] 
     @users_file  = File.new("users.json", file_mode)
     @total_users_crawled = 0
-    @crawling_limit = 5
+    @crawling_limit = 500
   end
 
   def crawl_users_from_seed(seed = @current_user_slug)
