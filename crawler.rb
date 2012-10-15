@@ -4,10 +4,7 @@ require 'debugger'
 require 'zlib'
 require 'json'
 require 'colorize'
-require_relative 'board'
-require_relative 'pin'
-require_relative 'user'
-#$LOAD_PATH << '.'
+Dir.glob('./models/*').each { |r| require_relative r }
 
 class PinterestCrawler 
   attr_accessor :append_to_file

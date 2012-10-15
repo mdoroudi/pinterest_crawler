@@ -1,5 +1,10 @@
 Pinterest Crawler
 =================
+### Create database tables if you want to analyse the data through mysql
+```sh
+$ ruby database_configuration.rb
+```
+
 ### How to run
 These rake tasks always append the result to the end of the files if they already exist or create new ones if not.
 if you don't want to append just empty the result files (boards.json, pins.json or users.json) 

@@ -1,10 +1,9 @@
-class Pin 
+require_relative 'database_configuration'
+
+class Pin < ActiveRecord::Base 
 
   attr_accessor :field_id, :user_id, :board_id, :img_url, :is_repin, :is_video, :source, :link, :description, :user_name
 
-  def initialize
-  end
-  
   def to_json
     {
       filed_id: field_id,

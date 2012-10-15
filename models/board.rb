@@ -1,9 +1,8 @@
-class Board 
+require_relative 'database_configuration'
+
+class Board < ActiveRecord::Base
   attr_accessor :field_id, :user_id, :user_name, :slug, :description, :category, :name
 
-  def initialize()
-  end
-  
   def to_json
     {
       field_id: field_id,

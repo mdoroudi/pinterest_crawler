@@ -1,4 +1,6 @@
-class User
+require_relative 'database_configuration'
+
+class User < ActiveRecord::Base
   attr_accessor :user_id, :user_name, :about, :followers, :following
 
   def initialize(params={})
