@@ -38,7 +38,7 @@ class PinAndBoardCrawler < PinterestCrawler
 
   def get_board_and_pins(board_thumb_html)
     @boards << get_board_info(board_thumb_html)
-    get_pins_info(@users_pin_board.css(".pin"), {board_id: @boards.last.field_id, slug: @boards.last.slug})
+    get_pins_info(@users_pin_board.css(".pin"), {board_id: @boards.last.field_id.to_i, slug: @boards.last.slug})
   end 
 
   def get_board_info(board_thumb_html)
@@ -47,7 +47,7 @@ class PinAndBoardCrawler < PinterestCrawler
         
     board.user_name   = @current_user_slug 
     board.user_id     = Zlib.crc32 @current_user_slug
-    board.field_id    = board_thumb_html["id"].gsub("board","")
+    board.field_id    = board_thumb_html["id"].gsub("board","").try(:to_i)
     board.slug        = board_thumb_html.css("h3 a").first["href"].gsub( @current_user_slug, "").gsub("\/","")
     board.name        = board_thumb_html.css("h3 a").first.text
     @users_pin_board  = get_page_html(users_url+board.slug)
@@ -112,7 +112,7 @@ class PinAndBoardCrawler < PinterestCrawler
 
     source_of = pin_html.css(".convo.attribution .NoImage a")
     pin = get_common_pin_info(pin_html, pin)
-    pin.board_id = args[:board_id] if args[:board_id]
+    pin.board_id = args[:board_id].to_i if args[:board_id]
     pin.source = source_of.empty? ? "User Uplaod" : source_of.attr("href").value
     @pins << pin
   end
