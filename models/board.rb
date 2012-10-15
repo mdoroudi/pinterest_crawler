@@ -2,8 +2,8 @@ require_relative '../database_configuration'
 
 class Board < ActiveRecord::Base
   attr_accessor :field_id, :user_id, :user_name, :slug, :description, :category, :name
+  attr_accessible :field_id, :user_id, :user_name, :slug, :description, :category, :name
 
-  validates_presence_of :field_id, :user_id, :slug
 
   def to_json
     {
