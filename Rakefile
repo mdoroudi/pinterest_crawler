@@ -1,5 +1,6 @@
 require_relative 'pin_and_board_crawler'
 require_relative 'user_crawler'
+require_relative 'analyze_data'
 require 'bundler'
 require 'colorize'
 
