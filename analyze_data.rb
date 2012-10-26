@@ -26,5 +26,3 @@ class DataAnalyzer
   end
 end
 
-da = DataAnalyzer.new
-da.load_data

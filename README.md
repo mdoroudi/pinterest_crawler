@@ -1,13 +1,12 @@
 Pinterest Crawler
 =================
 ### Create database tables if you want to analyse the data through mysql
-```sh
-$ ruby database_configuration.rb
-```
 
 ### How to run
-These rake tasks always append the result to the end of the files if they already exist or create new ones if not.
-if you don't want to append just empty the result files (boards.json, pins.json or users.json) 
+These rake tasks create new files or override exisiting json files, so make sure if you have old data back them up.
+the results are some of these: boards.json, pins.json or users.json
+
+#### Boards & Pins
 
 Get all the boards and pins from user mdoroudi. Replace the username mdoroudi whith whatever username you want.
 this creates two result files: `pins.json` and `boards.json`
@@ -28,7 +27,49 @@ this crates two result files: `pins.json` and `boards.json`
 $ rake crawl:pins_boards:from_homepage_deep
 ```
 
+### Users
 Given a user slug get all it's fololowers and followings, and for each get their follower and followings, the limit right no is 500 users
+
 ```sh
 $ rake crawl:users:from_seed seed=mdoroudi
 ```
+
+## Load data into your mysql database
+To analyze the data further you might want to load the data into mysql database, (right now it only pins and boards).
+
+### Create Tables
+before creating tables, make sure you have a config/database.yml file that almost looks like this but has your info in it
+
+#### Database
+
+```yml
+adapter: mysql2
+encoding: utf8
+host: localhost
+database: pinterest
+user: root
+password: 
+```
+
+and also create your database, in my case it's called `pinterest`
+
+```sql
+> create database pinterest
+```
+
+#### Tables
+This process creates the following three table: 
+* users
+* pins
+* boards
+
+```sh
+$ rake create_tables:all
+```
+
+#### Load data
+
+```sh
+$ rake load_data:all 
+```
+

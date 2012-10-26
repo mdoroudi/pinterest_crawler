@@ -50,6 +50,20 @@ namespace :crawl do
     task :from_homepage do
     end
   end
+end
 
+namespace :create_tables do
+  desc "creating users, pins and boards tables" 
+  task :all do
+    ruby "database_migration.rb"
+  end
+end
+
+namespace :load_data do
+  desc "loading pins and baords into pins and boards table"
+  task :all do
+    da = DataAnalyzer.new
+    da.load_data
+  end
 end
 
