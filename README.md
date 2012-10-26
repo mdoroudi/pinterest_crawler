@@ -73,9 +73,11 @@ loads the json data into the corresponding tables
 $ rake load_data:all 
 ```
 
-### TODO / Work in Progress
+## TODO / Work in Progress
+
 * User: creating following/follower relationship and chaning the user_crawler code to respect it (following_followers_rel branch)
 * User: add has_many pins & has_many baords 
+* User: add a rake task to load them into database just like pins and boards 
 * Pins & Boards: add belong_to user, remove username from table (following_followers_rel branch)
 * Pins: work on is_video
 * Bring code/datastructures/graph.rb here so can be used 
