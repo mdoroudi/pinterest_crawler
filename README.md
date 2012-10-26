@@ -1,12 +1,11 @@
 Pinterest Crawler
 =================
-### Create database tables if you want to analyse the data through mysql
 
 ### How to run
 These rake tasks create new files or override exisiting json files, so make sure if you have old data back them up.
 the results are some of these: boards.json, pins.json or users.json
 
-#### Boards & Pins
+### Boards & Pins
 
 Get all the boards and pins from user mdoroudi. Replace the username mdoroudi whith whatever username you want.
 this creates two result files: `pins.json` and `boards.json`
@@ -38,7 +37,7 @@ $ rake crawl:users:from_seed seed=mdoroudi
 To analyze the data further you might want to load the data into mysql database, (right now it only pins and boards).
 
 ### Create Tables
-before creating tables, make sure you have a config/database.yml file that almost looks like this but has your info in it
+before creating tables, make sure you have a `config/database.yml` file that almost looks like this but has your info in it
 
 #### Database
 
@@ -68,6 +67,7 @@ $ rake create_tables:all
 ```
 
 #### Load data
+loads the json data into the corresponding tables
 
 ```sh
 $ rake load_data:all 
