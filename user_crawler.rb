@@ -10,22 +10,24 @@ class UserCrawler < PinterestCrawler
 
     super params
     @users       = []
-    @users_slugs = params[:seed].nil? ? [] : [params[:seed]]
-    @crawled_users_ids = [] 
+    @users_slugs_q = params[:seed].nil? ? [] : [params[:seed]]
+    @crawled_users_ids = {} 
     @users_file  = File.new("users.json", file_mode)
     @total_users_crawled = 0
     @crawling_limit = 50
   end
 
+  # given slug of a user, get the users info + all her following and followers
+  # also all of their following and followers (BFS) so we get the users info first
   def crawl_users_from_seed(seed = @current_user_slug)
-    while @users_slugs.size > 0 && @total_users_crawled < @crawling_limit
+    while @users_slugs_q.size > 0 && @total_users_crawled < @crawling_limit
       begin
-        crawl_current_user(@users_slugs[0])
-        @users_slugs.delete_at(0)
+        crawl_current_user(@users_slugs_q[0])
+        @users_slugs_q.delete_at(0)
       rescue Exception => e
         puts e
-        puts "There was a problem with the current user: #{@users_slugs[0]}".red
-        @users_slugs.delete_at(0)
+        puts "There was a problem with the current user: #{@users_slugs_q[0]}".red
+        @users_slugs_q.delete_at(0)
         next
       end
     end
@@ -50,22 +52,22 @@ class UserCrawler < PinterestCrawler
     following_html.css(".person").each do |person_html|
       user_name = person_html.css(".PersonImage").attr("href").value.split("/")[1] 
       seed_user.following << Zlib.crc32(user_name)
-      @users_slugs << user_name
+      @users_slugs_q << user_name
     end
 
     followers_html.css(".person").each do |person_html|
       user_name = person_html.css(".PersonImage").attr("href").value.split("/")[1] 
       seed_user.followers << Zlib.crc32(user_name)
-      @users_slugs << user_name
+      @users_slugs_q << user_name
     end
-    @crawled_users_ids << seed_user.user_id
+    @crawled_users_ids[seed_user.user_id] = true
   end
 
   protected
   
   def have_been_crawled?(user_slug)
     id = Zlib.crc32 user_slug
-    @crawled_users_ids.find_index(id).nil? ? false : true
+    !@crawled_users_ids[id].nil?
   end
 
   def save_to_file
