@@ -45,19 +45,19 @@ class UserCrawler < PinterestCrawler
     following_html = users_following_page(seed)
     followers_html = users_followers_page(seed)
     
-    seed_user.user_id = Zlib.crc32 seed
+    seed_user.user_id = unique_id seed
     seed_user.about = followers_html.css(".content p").text 
 
 
     following_html.css(".person").each do |person_html|
       user_name = person_html.css(".PersonImage").attr("href").value.split("/")[1] 
-      seed_user.following << Zlib.crc32(user_name)
+      seed_user.following << unique_id(user_name)
       @users_slugs_q << user_name
     end
 
     followers_html.css(".person").each do |person_html|
       user_name = person_html.css(".PersonImage").attr("href").value.split("/")[1] 
-      seed_user.followers << Zlib.crc32(user_name)
+      seed_user.followers << unique_id(user_name)
       @users_slugs_q << user_name
     end
     @crawled_users_ids[seed_user.user_id] = true
@@ -66,7 +66,7 @@ class UserCrawler < PinterestCrawler
   protected
   
   def have_been_crawled?(user_slug)
-    id = Zlib.crc32 user_slug
+    id = unique_id user_slug
     !@crawled_users_ids[id].nil?
   end
 

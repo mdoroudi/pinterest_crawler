@@ -59,6 +59,11 @@ class PinterestCrawler
     Nokogiri::HTML(open(url, header_hash)) 
   end
 
+  # should change this to SHA256 or something better with less collision
+  def unique_id(slug)
+    Zlib.crc32 slug
+  end
+
 end
 
 # run with

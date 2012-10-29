@@ -28,15 +28,15 @@ class PinAndBoardCrawler < PinterestCrawler
   # deep is false, just crawl the 50 pins on the main page
   def crawl_from_main_page(deep = false)
     @deep = deep
-     @current_user_slug = nil 
-     home_page = get_page_html("http://pinterest.com/") 
-     pins = home_page.css("#wrapper #ColumnContainer .pin")
-     if deep
-       get_pins_info(pins, {crawling_from_main_page: 'boards'})
-     else
-       get_pins_info(pins, {crawling_from_main_page: 'pins'})
-     end
-     save_to_files
+    @current_user_slug = nil 
+    home_page = get_page_html("http://pinterest.com/") 
+    pins = home_page.css("#wrapper #ColumnContainer .pin")
+    if deep
+     get_pins_info(pins, {crawling_from_main_page: 'boards'})
+    else
+     get_pins_info(pins, {crawling_from_main_page: 'pins'})
+    end
+    save_to_files
   end
 
 
@@ -86,7 +86,7 @@ class PinAndBoardCrawler < PinterestCrawler
   # extracting data from the common UI and CSS between pins on the main page and on each board
   def get_common_pin_info(pin_html, pin)
     pin.user_name = @current_user_slug
-    pin.user_id = Zlib.crc32 @current_user_slug
+    pin.user_id = unique_id @current_user_slug
     pin.field_id = pin_html.attr("data-id") 
     pin.description = pin_html.css(".description").text 
     pin.link = pin_html.css(".PinImage.ImgLink").attr("href").value 
@@ -100,7 +100,7 @@ class PinAndBoardCrawler < PinterestCrawler
     board = Board.new
         
     board.user_name   = @current_user_slug 
-    board.user_id     = Zlib.crc32 @current_user_slug
+    board.user_id     = unique_id @current_user_slug
     board.field_id    = board_thumb_html["id"].gsub("board","").try(:to_i)
     board.slug        = board_thumb_html.css("h3 a").first["href"].gsub( @current_user_slug, "").gsub("\/","")
     board.name        = board_thumb_html.css("h3 a").first.text
@@ -113,7 +113,8 @@ class PinAndBoardCrawler < PinterestCrawler
 
   # helper method for given all the pin_htmls
   # if it's crawling from main page and it needs to get the baords (deep)
-  #   set the pin owner to user slug and crawl all her boards nad pins
+  #   set the pin owner to the curret_user
+  #   see if the current_user has not been crawled through the main page get all her boads and pins
   # if it's crawling from main page and it needs to get the pins only (not deep)
   #   call the method that only extract the pins
   # else it's crawling from seed so just do the right thing 
@@ -123,12 +124,16 @@ class PinAndBoardCrawler < PinterestCrawler
       slug: nil, 
       crawling_from_main_page: "none",
     }
+    visited_users = {}
     args = default_args.merge(args)
     pins_html.each_with_index do |pin_html, index|
       begin
         if args[:crawling_from_main_page] == "boards"
           @current_user_slug = pin_html.css(".convo a").attr("href").value.split("/")[1] 
-          crawl_from_seed
+          if visited_users[unique_id(@current_user_slug)].nil?
+             visited_users[unique_id(@current_user_slug)] = true
+            crawl_from_seed
+          end
         elsif args[:crawling_from_main_page] == "pins"
           get_pin_info_only_from_main(pin_html, index)
         else
@@ -143,6 +148,5 @@ class PinAndBoardCrawler < PinterestCrawler
     end
     @pins
   end
-
 
 end
