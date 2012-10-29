@@ -12,6 +12,7 @@ class PinAndBoardCrawler < PinterestCrawler
     @deep = false
   end
 
+  # for current user slug get all her pins and boards
   def crawl_from_seed
     users_page =  users_page(@current_user_slug)
     sleep rand(1.0..2.0)
@@ -22,6 +23,9 @@ class PinAndBoardCrawler < PinterestCrawler
     save_to_files unless @deep
   end
 
+  # from the main page if
+  # deep is true, get all the boards of the pins in the main page and crawl both boards and pis
+  # deep is false, just crawl the 50 pins on the main page
   def crawl_from_main_page(deep = false)
     @deep = deep
      @current_user_slug = nil 
@@ -36,11 +40,61 @@ class PinAndBoardCrawler < PinterestCrawler
   end
 
 
+  protected
+
+  # helper method for crawling from users seed
+  # input: html for the board thumbnail on users profile
   def get_board_and_pins(board_thumb_html)
     @boards << get_board_info(board_thumb_html)
     get_pins_info(@users_pin_board.css(".pin"), {board_id: @boards.last.field_id.to_i, slug: @boards.last.slug})
   end 
+  
+  # for both pins and boards data, save them to file as json
+  def save_to_files
+    @boards.collect! { |board| board.to_json } 
+    @pins.collect! { |pin| pin.to_json } 
 
+    @boards = JSON.generate(@boards)
+    @pins = JSON.generate(@pins)
+
+    @boards_file.puts @boards unless @boards.empty?
+    @pins_file.puts @pins unless @pins.empty?
+  end 
+
+  # pins info from the main page
+  def get_pin_info_only_from_main(pin_html, index)
+    pin = Pin.new
+    @current_user_slug = pin_html.css(".convo a").attr("href").value.split("/")[1] 
+    puts "Crawling #{index}th pin of the main page. User: #{@current_user_slug}"
+
+    pin = get_common_pin_info(pin_html, pin)
+    @pins << pin
+  end
+
+  # pins info from users boards
+  def get_pin_info_from_board(pin_html, index, args)
+    pin = Pin.new
+    puts "Crawling #{index}th pin of board #{@current_user_slug}/#{args[:slug]}" if args[:slug]
+
+    source_of = pin_html.css(".convo.attribution .NoImage a")
+    pin = get_common_pin_info(pin_html, pin)
+    pin.board_id = args[:board_id].to_i if args[:board_id]
+    pin.source = source_of.empty? ? "User Uplaod" : source_of.attr("href").value
+    @pins << pin
+  end
+
+  # extracting data from the common UI and CSS between pins on the main page and on each board
+  def get_common_pin_info(pin_html, pin)
+    pin.user_name = @current_user_slug
+    pin.user_id = Zlib.crc32 @current_user_slug
+    pin.field_id = pin_html.attr("data-id") 
+    pin.description = pin_html.css(".description").text 
+    pin.link = pin_html.css(".PinImage.ImgLink").attr("href").value 
+    pin.img_url = pin_html.css(".PinImage.ImgLink img").attr("src").value 
+    pin
+  end
+
+  # helper method for given a board thumbnail, extract the board info and return a Board instance
   def get_board_info(board_thumb_html)
     board_thumb_html = board_thumb_html.css(".pinBoard").first
     board = Board.new
@@ -57,6 +111,12 @@ class PinAndBoardCrawler < PinterestCrawler
     board
   end 
 
+  # helper method for given all the pin_htmls
+  # if it's crawling from main page and it needs to get the baords (deep)
+  #   set the pin owner to user slug and crawl all her boards nad pins
+  # if it's crawling from main page and it needs to get the pins only (not deep)
+  #   call the method that only extract the pins
+  # else it's crawling from seed so just do the right thing 
   def get_pins_info(pins_html, args = {})
     default_args = {
       board_id: nil, 
@@ -82,49 +142,6 @@ class PinAndBoardCrawler < PinterestCrawler
       end
     end
     @pins
-  end
-
-  protected
-  
-  def save_to_files
-    @boards.collect! { |board| board.to_json } 
-    @pins.collect! { |pin| pin.to_json } 
-
-    @boards = JSON.generate(@boards)
-    @pins = JSON.generate(@pins)
-
-    @boards_file.puts @boards unless @boards.empty?
-    @pins_file.puts @pins unless @pins.empty?
-  end 
-
-  def get_pin_info_only_from_main(pin_html, index)
-    pin = Pin.new
-    @current_user_slug = pin_html.css(".convo a").attr("href").value.split("/")[1] 
-    puts "Crawling #{index}th pin of the main page. User: #{@current_user_slug}"
-
-    pin = get_common_pin_info(pin_html, pin)
-    @pins << pin
-  end
-
-  def get_pin_info_from_board(pin_html, index, args)
-    pin = Pin.new
-    puts "Crawling #{index}th pin of board #{@current_user_slug}/#{args[:slug]}" if args[:slug]
-
-    source_of = pin_html.css(".convo.attribution .NoImage a")
-    pin = get_common_pin_info(pin_html, pin)
-    pin.board_id = args[:board_id].to_i if args[:board_id]
-    pin.source = source_of.empty? ? "User Uplaod" : source_of.attr("href").value
-    @pins << pin
-  end
-
-  def get_common_pin_info(pin_html, pin)
-    pin.user_name = @current_user_slug
-    pin.user_id = Zlib.crc32 @current_user_slug
-    pin.field_id = pin_html.attr("data-id") 
-    pin.description = pin_html.css(".description").text 
-    pin.link = pin_html.css(".PinImage.ImgLink").attr("href").value 
-    pin.img_url = pin_html.css(".PinImage.ImgLink img").attr("src").value 
-    pin
   end
 
 
