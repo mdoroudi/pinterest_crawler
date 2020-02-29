@@ -42,7 +42,7 @@ GEM
     net-http-persistent (2.7)
     nokogiri (1.5.5)
     ntlm-http (0.1.1)
-    rake (0.8.7)
+    rake (12.3.3)
     tzinfo (0.3.33)
     unf (0.0.5)
       unf_ext
